@@ -112,7 +112,7 @@ def similarity_search(db: Session, orig_embedding : list[float]):
     try:
         statement = (
             select(Embedding)
-            .where(Embedding.embedding.cosine_distance(orig_embedding) >= 0.9)
+            .where(1 - Embedding.embedding.cosine_distance(orig_embedding) >= 0.9)
             .order_by(Embedding.embedding.cosine_distance(orig_embedding))
             .limit(1))
         closest_embedding_obj = db.execute(statement).scalars().first()
