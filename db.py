@@ -67,6 +67,8 @@ def add_embedding(db: Session, embedding: list[float], confidence: float, person
     :return: Updated person object, None if not found
     """
     try:
+        #Add embedding to given person
+        # noinspection PyTypeChecker
         db.add(Embedding(embedding=embedding, person=person, confidence=confidence))
         db.commit()
 
@@ -92,6 +94,7 @@ def register_person(db: Session, embedding: list[float], confidence: float):
         db.flush()
 
         #Create new embedding and link to Person
+        # noinspection PyTypeChecker
         new_embedding = Embedding(embedding=embedding, confidence=confidence, person = new_person)
         db.add(new_embedding)
         db.commit()
@@ -110,9 +113,10 @@ def similarity_search(db: Session, orig_embedding : list[float]):
     :return: the closest embedding, and the person it belongs to, or None for no match.
     """
     try:
+        #Find similar embedding
         statement = (
             select(Embedding)
-            .where(1 - Embedding.embedding.cosine_distance(orig_embedding) >= 0.9)
+            .where(1 - Embedding.embedding.cosine_distance(orig_embedding) >= 0.8)
             .order_by(Embedding.embedding.cosine_distance(orig_embedding))
             .limit(1))
         closest_embedding_obj = db.execute(statement).scalars().first()
