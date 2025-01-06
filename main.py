@@ -1,9 +1,8 @@
+from numpy import ndarray
 from ultralytics import YOLO
 from deepface import DeepFace
+import cv2
 from db import *
-
-
-
 
 def get_class_ids(classes):
     """
@@ -18,41 +17,78 @@ def get_class_ids(classes):
 
     return desired_ids
 
-def detect_people_directory(directory : str):
+
+
+def process_face(cropped_img : ndarray, db : Session):
+    """
+    Processes face into embedding and stores embedding into db.
+    :param cropped_img: numpy array of face image
+    :param db: db session
+    :return: None
+    """
+    try:
+        data = DeepFace.represent(img_path=cropped_img, model_name="Facenet512")
+        embedding = data[0]["embedding"]
+        confidence = data[0]["face_confidence"]
+
+        similar_embedding, similar_person = similarity_search(db, embedding)
+
+        if similar_embedding is not None:
+            add_embedding(db, embedding, confidence, similar_person)
+            print(f"Added embedding to: Person {similar_person.id}")
+        else:
+            new_person = register_person(db, embedding, confidence)
+            print(f"Registered Person {new_person.id}")
+
+    except Exception as e:
+        print(f"Error occurred while generating embedding: {str(e)}")
+
+
+
+def detect_people(directory : str):
     """
     Given a directory of images, detects people using Yolo and stores embeddings for each person in db
+    :param directory: a directory of images to detect or path to a singular image
     :return:
     """
 
     with next(get_db()) as db:
         try:
             results = model.predict(source=directory, classes=desired_ids, save_crop=True,
-                                project=SAVE_DATA_PATH, conf=0.7)
+                                project=SAVE_DATA_PATH, conf=0.8, max_det = 1, batch=8)
 
             for result in results:
                 boxes = result.boxes
                 img = result.orig_img
 
+
                 #TODO: implement batch processing
                 for box in boxes:
                     x1, y1, x2, y2 = map(int, box.xyxy[0].tolist())
                     cropped_img = img[y1:y2, x1:x2]
-                    try:
-                        data = DeepFace.represent(img_path=cropped_img, model_name="Facenet512")
-                        embedding = data[0]["embedding"]
-                        confidence = data[0]["face_confidence"]
+                    process_face(cropped_img, db)
 
-                        similar_embedding, similar_person = similarity_search(db, embedding)
+        except Exception as e:
+            print(f"Error occurred while detecting person: {str(e)}")
 
-                        if similar_embedding is not None:
-                            add_embedding(db, embedding, confidence, similar_person)
-                            print(f"Added embedding: Person {similar_person.id}")
-                        else:
-                            new_person = register_person(db, embedding, confidence)
-                            print(f"Registered Person {new_person.id}")
+def detect_people_video(video : str):
+    """
+    Detects people using Yolo and stores embeddings for each person in db
+    :param video: path to video file
+    :return: None
+    """
 
-                    except Exception as e:
-                        print(f"Error occurred while generating embedding: {str(e)}")
+    with next(get_db()) as db:
+        try:
+            results = model.predict(source=video, classes=desired_ids, stream=True, batch=8,
+                                    save_crop=True, project=SAVE_DATA_PATH, conf=0.8, max_det = 1)
+            for result in results:
+                boxes = result.boxes
+                img = result.orig_img
+                for box in boxes:
+                    x1, y1, x2, y2 = map(int, box.xyxy[0].tolist())
+                    cropped_img = img[y1:y2, x1:x2]
+                    process_face(cropped_img, db)
 
         except Exception as e:
             print(f"Error occurred while detecting person: {str(e)}")
@@ -94,5 +130,7 @@ desired_ids = get_class_ids(desired_classes)
 
 
 
+detect_people("./testData2/2019-disneylegend-rdj.jpg")
 
-detect_people_directory(SOURCE_DATA_PATH)
+#detect_people("./testData")
+#detect_people_video("./video.mp4")

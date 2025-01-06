@@ -1,5 +1,5 @@
 from typing import Optional
-from sqlalchemy import create_engine, ForeignKey, select
+from sqlalchemy import create_engine, ForeignKey, select, Index
 from sqlalchemy.exc import SQLAlchemyError
 from sqlalchemy.orm import declarative_base, Mapped, mapped_column, relationship, sessionmaker
 from pgvector.sqlalchemy import Vector
@@ -38,6 +38,15 @@ class Embedding(Base):
     confidence : Mapped[float] = mapped_column()
     person_id: Mapped[int] = mapped_column(ForeignKey('person.id'))
     person: Mapped[Person] = relationship(back_populates="embeddings")
+
+    # __table_args__ = (
+    #     Index(
+    #         "embedding_embedding_idx",
+    #         embedding,
+    #         postgresql_using="hnsw",
+    #         postgresql_ops={"embedding": "vector_cosine_ops"}
+    #     ),
+    # )
 
     def __repr__(self):
         return f"Embedding(id={self.id}, confidence = {self.confidence}, person_id={self.person_id}, person={self.person})"
@@ -116,8 +125,8 @@ def similarity_search(db: Session, orig_embedding : list[float]):
         #Find similar embedding
         statement = (
             select(Embedding)
-            .where(1 - Embedding.embedding.cosine_distance(orig_embedding) >= 0.8)
-            .order_by(Embedding.embedding.cosine_distance(orig_embedding))
+            .where(1 - Embedding.embedding.cosine_distance(orig_embedding) >= 0.32)
+            .order_by(1- Embedding.embedding.cosine_distance(orig_embedding))
             .limit(1))
         closest_embedding_obj = db.execute(statement).scalars().first()
 
@@ -134,11 +143,3 @@ def similarity_search(db: Session, orig_embedding : list[float]):
     except Exception as e :
         print(f"An Error occurred during Similarity Search: {str(e)}")
         return None, None
-
-
-
-
-
-
-
-
