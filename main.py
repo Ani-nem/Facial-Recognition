@@ -27,7 +27,7 @@ def process_face(cropped_img : ndarray, db : Session):
     :return: None
     """
     try:
-        data = DeepFace.represent(img_path=cropped_img, model_name="Facenet512")
+        data = DeepFace.represent(img_path=cropped_img)
         embedding = data[0]["embedding"]
         confidence = data[0]["face_confidence"]
 
@@ -130,7 +130,6 @@ desired_ids = get_class_ids(desired_classes)
 
 
 
-detect_people("./testData2/2019-disneylegend-rdj.jpg")
+#detect_people("./testData2/2019-disneylegend-rdj.jpg")
 
-#detect_people("./testData")
-#detect_people_video("./video.mp4")
+detect_people("./testDataOnePerson")

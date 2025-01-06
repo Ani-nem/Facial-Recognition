@@ -18,7 +18,7 @@ if not all([DATABASE_USER, DATABASE_PASSWORD, DATABASE_HOST, DATABASE_PORT, DATA
 
 DATABASE_URL = f"postgresql://{DATABASE_USER}:{DATABASE_PASSWORD}@{DATABASE_HOST}:{DATABASE_PORT}/{DATABASE_NAME}"
 Base = declarative_base()
-VECTOR_SIZE = 512
+VECTOR_SIZE = 4096
 
 class Person(Base):
     #Table for Known People in dB
@@ -143,3 +143,4 @@ def similarity_search(db: Session, orig_embedding : list[float]):
     except Exception as e :
         print(f"An Error occurred during Similarity Search: {str(e)}")
         return None, None
+
