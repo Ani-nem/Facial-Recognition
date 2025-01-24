@@ -36,6 +36,7 @@ class Embedding(Base):
     id: Mapped[int] = mapped_column(primary_key=True)
     embedding: Mapped[Vector] = mapped_column(Vector(VECTOR_SIZE))
     confidence : Mapped[float] = mapped_column()
+    img_path: Mapped[str] = mapped_column()
     person_id: Mapped[int] = mapped_column(ForeignKey('person.id'))
     person: Mapped[Person] = relationship(back_populates="embeddings")
 
@@ -66,10 +67,11 @@ def get_db() -> Session:
     finally:
         db.close()
 
-def add_embedding(db: Session, embedding: list[float], confidence: float, person : Person):
+def add_embedding(db: Session, embedding: list[float], confidence: float, img_path: str, person : Person):
     """
     Adds embedding to the specified person
     :param db: database session
+    :param img_path: path to image
     :param embedding: embedding vector
     :param confidence: confidence value
     :param person: person
@@ -78,7 +80,7 @@ def add_embedding(db: Session, embedding: list[float], confidence: float, person
     try:
         #Add embedding to given person
         # noinspection PyTypeChecker
-        db.add(Embedding(embedding=embedding, person=person, confidence=confidence))
+        db.add(Embedding(embedding=embedding, person=person, img_path=img_path, confidence=confidence))
         db.commit()
 
         person_statement = select(Person).where(Person.id == person.id)
@@ -88,13 +90,14 @@ def add_embedding(db: Session, embedding: list[float], confidence: float, person
         print(f"Error adding embedding to {person.name}: {str(e)}")
         db.rollback()
 
-def register_person(db: Session, embedding: list[float], confidence: float):
+def register_person(db: Session, embedding: list[float],  confidence: float, img_path : str):
     """
     Creates new unknown person with given embedding
     :param db: database session
+    :param img_path: path to image
     :param embedding: embedding vector
     :param confidence: confidence value
-    :return: Newly created Person Object, None if not found
+    :return: Newly created Person Object
     """
     try:
         #Create new Person
@@ -104,7 +107,7 @@ def register_person(db: Session, embedding: list[float], confidence: float):
 
         #Create new embedding and link to Person
         # noinspection PyTypeChecker
-        new_embedding = Embedding(embedding=embedding, confidence=confidence, person = new_person)
+        new_embedding = Embedding(embedding=embedding, confidence=confidence, img_path=img_path, person = new_person)
         db.add(new_embedding)
         db.commit()
 
@@ -122,6 +125,7 @@ def similarity_search(db: Session, orig_embedding : list[float]):
     :return: the closest embedding, and the person it belongs to, or None for no match.
     """
     try:
+
         #Find similar embedding
         statement = (
             select(Embedding)
@@ -144,3 +148,16 @@ def similarity_search(db: Session, orig_embedding : list[float]):
         print(f"An Error occurred during Similarity Search: {str(e)}")
         return None, None
 
+def get_people(db: Session):
+    """
+    Returns all people in the database
+    :param db: database session
+    :return: list of people
+    """
+    try:
+        statement = select(Person)
+        people = db.execute(statement).scalars().all()
+        return people
+    except Exception as e:
+        print(f"Error getting people: {str(e)}")
+        return []
