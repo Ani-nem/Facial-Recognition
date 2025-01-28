@@ -18,7 +18,7 @@ if not all([DATABASE_USER, DATABASE_PASSWORD, DATABASE_HOST, DATABASE_PORT, DATA
 
 DATABASE_URL = f"postgresql://{DATABASE_USER}:{DATABASE_PASSWORD}@{DATABASE_HOST}:{DATABASE_PORT}/{DATABASE_NAME}"
 Base = declarative_base()
-VECTOR_SIZE = 4096
+VECTOR_SIZE = 128
 
 class Person(Base):
     #Table for Known People in dB
@@ -30,6 +30,7 @@ class Person(Base):
     def __repr__(self):
         return f"<Person(id={self.id}, name={self.name}, embeddings = {self.embeddings})>"
 
+# TODO: remove confidence from Embedding & update functions
 class Embedding(Base):
     #Stores an embedding alongside the confidence score with it
     __tablename__ = 'embedding'
@@ -129,7 +130,7 @@ def similarity_search(db: Session, orig_embedding : list[float]):
         #Find similar embedding
         statement = (
             select(Embedding)
-            .where(1 - Embedding.embedding.cosine_distance(orig_embedding) >= 0.58)
+            .where(1 - Embedding.embedding.cosine_distance(orig_embedding) >= 0.93)
             .order_by(1- Embedding.embedding.cosine_distance(orig_embedding))
             .limit(1))
         closest_embedding_obj = db.execute(statement).scalars().first()
