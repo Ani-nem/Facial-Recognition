@@ -6,6 +6,13 @@ from deepface import DeepFace
 import cv2
 from db import *
 
+
+import os
+import numpy as np
+from deepface import DeepFace
+from collections import defaultdict
+
+
 def get_class_ids(classes):
     """
     Returns a list of classes ids.
@@ -151,7 +158,7 @@ desired_ids = get_class_ids(desired_classes)
 
 def facial_detection(directory: str):
     """
-    Prints the concatenated paths of all images in the given directory.
+    uses onlt the facial recognition model to detect faces in images
     :param directory: path to the directory containing images
     :return: None
     """
@@ -164,8 +171,140 @@ def facial_detection(directory: str):
 
 
 
-#detect_people("./testData2/2019-disneylegend-rdj.jpg")
-detect_people("./testData")
 
-#facial_detection("./testData")
+
+def calculate_similarity_statistics(dataset_path: str):
+    """
+    Analyzes a dataset where each subfolder contains images of the same person.
+    Calculates similarity statistics between images known to be of the same person.
+
+    Dataset structure:
+    dataset_path/
+        person1/
+            image1.jpg
+            image2.jpg
+        person2/
+            image1.jpg
+            image2.jpg
+
+    :param dataset_path: Path to the root directory containing person folders
+    :return: Dictionary containing similarity statistics
+    """
+    # Dictionary to store embeddings for each person
+    person_embeddings = defaultdict(list)
+
+    # Dictionary to store similarity scores for each person
+    person_similarities = defaultdict(list)
+
+    # Process each person's folder
+    for person_folder in os.listdir(dataset_path):
+        person_path = os.path.join(dataset_path, person_folder)
+
+        if not os.path.isdir(person_path):
+            continue
+
+        print(f"\nProcessing person: {person_folder}")
+
+        # Get embeddings for all images of this person
+        for img_file in os.listdir(person_path):
+            if not img_file.lower().endswith(('.png', '.jpg', '.jpeg', '.bmp')):
+                continue
+
+            img_path = os.path.join(person_path, img_file)
+            try:
+                # Extract embedding
+                data = DeepFace.represent(img_path=img_path, model_name="VGG-Face")
+                embedding = data[0]["embedding"]
+                person_embeddings[person_folder].append(embedding)
+                print(f"Processed {img_file}")
+
+            except Exception as e:
+                print(f"Error processing {img_file}: {str(e)}")
+
+    # Calculate similarities between all pairs of embeddings for each person
+    overall_similarities = []
+
+    for person, embeddings in person_embeddings.items():
+        print(f"\nCalculating similarities for {person}")
+
+        # Compare each embedding with every other embedding of the same person
+        for i in range(len(embeddings)):
+            for j in range(i + 1, len(embeddings)):
+                # Calculate cosine similarity
+                similarity = 1 - (np.dot(embeddings[i], embeddings[j]) /
+                                  (np.linalg.norm(embeddings[i]) * np.linalg.norm(embeddings[j])))
+                person_similarities[person].append(similarity)
+                overall_similarities.append(similarity)
+
+    # Calculate statistics
+    stats = {
+        'per_person': {},
+        'overall': {}
+    }
+
+    # Per-person statistics
+    for person, similarities in person_similarities.items():
+        if similarities:  # Check if we have any similarities for this person
+            stats['per_person'][person] = {
+                'mean': np.mean(similarities),
+                'std': np.std(similarities),
+                'min': np.min(similarities),
+                'max': np.max(similarities),
+                'count': len(similarities)
+            }
+
+    # Overall statistics
+    if overall_similarities:
+        stats['overall'] = {
+            'mean': np.mean(overall_similarities),
+            'std': np.std(overall_similarities),
+            'min': np.min(overall_similarities),
+            'max': np.max(overall_similarities),
+            'count': len(overall_similarities)
+        }
+
+        # Calculate potential threshold suggestions
+        stats['suggested_thresholds'] = {
+            'strict': stats['overall']['mean'] - stats['overall']['std'],  # More strict threshold
+            'balanced': stats['overall']['mean'],  # Balanced threshold
+            'lenient': stats['overall']['mean'] + stats['overall']['std']  # More lenient threshold
+        }
+
+    return stats
+
+
+def print_similarity_stats(stats):
+    """
+    Prints the similarity statistics in a readable format
+    """
+    print("\n=== Overall Statistics ===")
+    print(f"Number of comparisons: {stats['overall']['count']}")
+    print(f"Mean similarity: {stats['overall']['mean']:.4f}")
+    print(f"Standard deviation: {stats['overall']['std']:.4f}")
+    print(f"Range: {stats['overall']['min']:.4f} to {stats['overall']['max']:.4f}")
+
+    print("\n=== Suggested Thresholds ===")
+    print(f"Strict (fewer false positives): {stats['suggested_thresholds']['strict']:.4f}")
+    print(f"Balanced: {stats['suggested_thresholds']['balanced']:.4f}")
+    print(f"Lenient (fewer false negatives): {stats['suggested_thresholds']['lenient']:.4f}")
+
+    print("\n=== Per-Person Statistics ===")
+    for person, person_stats in stats['per_person'].items():
+        print(f"\n{person}:")
+        print(f"  Comparisons: {person_stats['count']}")
+        print(f"  Mean: {person_stats['mean']:.4f}")
+        print(f"  Std: {person_stats['std']:.4f}")
+        print(f"  Range: {person_stats['min']:.4f} to {person_stats['max']:.4f}")
+
+
+# Usage example:
+
+# dataset_path = "lfw_funneled"
+# stats = calculate_similarity_statistics(dataset_path)
+# print_similarity_stats(stats)
+
+
+detect_people("./testData2")
+#
+# #facial_detection("./testData")
 visualize_results()
