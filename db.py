@@ -56,6 +56,13 @@ class Embedding(Base):
 
 engine = create_engine(DATABASE_URL)
 Base.metadata.create_all(engine)
+index = Index(
+    'embedding_hnsw_index',
+    Embedding.embedding,
+    postgresql_using='hnsw',
+    postgresql_with={'m': 16, 'ef_construction': 64},
+    postgresql_ops={'embedding': 'vector_cosine_ops'})
+index.create(engine)
 Session = sessionmaker(bind=engine)
 
 
@@ -130,8 +137,8 @@ def similarity_search(db: Session, orig_embedding : list[float]):
         #Find similar embedding
         statement = (
             select(Embedding)
-            .where(1 - Embedding.embedding.cosine_distance(orig_embedding) >= 0.93)
-            .order_by(1- Embedding.embedding.cosine_distance(orig_embedding))
+            .where(Embedding.embedding.cosine_distance(orig_embedding) <= 0.0558)
+            .order_by(Embedding.embedding.cosine_distance(orig_embedding))
             .limit(1))
         closest_embedding_obj = db.execute(statement).scalars().first()
 

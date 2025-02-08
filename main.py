@@ -3,15 +3,14 @@ from sys import orig_argv
 import face_recognition
 from numpy import ndarray
 from ultralytics import YOLO
-from deepface import DeepFace
+
 import cv2
 from db import *
 from util import *
 
 
 import os
-import numpy as np
-from collections import defaultdict
+
 
 
 def get_class_ids(classes):
@@ -157,10 +156,10 @@ model = YOLO("yolo11n.pt")
 desired_ids = get_class_ids(desired_classes)
 
 
-dataset_path = "lfw_filtered"
-stats = calculate_similarity_statistics(dataset_path)
-print_similarity_stats(stats)
+# dataset_path = "lfw_filtered"
+# stats = calculate_similarity_statistics(dataset_path)
+# print_similarity_stats(stats)
 
 # copy_folders_with_images("./lfw_funneled", "./lfw_filtered", 10)
-# detect_people("./testData")
-# visualize_results()
+detect_people("./testData3")
+visualize_results()

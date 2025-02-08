@@ -167,9 +167,9 @@ def calculate_similarity_statistics(dataset_path: str):
 
         # Calculate potential threshold suggestions
         stats['suggested_thresholds'] = {
-            'strict': stats['overall']['mean'] - stats['overall']['std'],  # More strict threshold
+            'lenient': stats['overall']['mean'] - stats['overall']['std'],  # More lenient threshold
             'balanced': stats['overall']['mean'],  # Balanced threshold
-            'lenient': stats['overall']['mean'] + stats['overall']['std']  # More lenient threshold
+            'strict': stats['overall']['mean'] + stats['overall']['std']  # More strict threshold
         }
 
     return stats
