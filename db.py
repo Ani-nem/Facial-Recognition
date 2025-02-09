@@ -41,14 +41,14 @@ class Embedding(Base):
     person_id: Mapped[int] = mapped_column(ForeignKey('person.id'))
     person: Mapped[Person] = relationship(back_populates="embeddings")
 
-    # __table_args__ = (
-    #     Index(
-    #         "embedding_embedding_idx",
-    #         embedding,
-    #         postgresql_using="hnsw",
-    #         postgresql_ops={"embedding": "vector_cosine_ops"}
-    #     ),
-    # )
+    __table_args__ = (
+        Index(
+            'embedding_hnsw_index',
+            embedding,
+            postgresql_using='hnsw',
+            postgresql_with={'m': 16, 'ef_construction': 64},
+            postgresql_ops={'embedding': 'vector_cosine_ops'}),
+    )
 
     def __repr__(self):
         return f"Embedding(id={self.id}, confidence = {self.confidence}, person_id={self.person_id}, person={self.person})"
@@ -56,13 +56,6 @@ class Embedding(Base):
 
 engine = create_engine(DATABASE_URL)
 Base.metadata.create_all(engine)
-index = Index(
-    'embedding_hnsw_index',
-    Embedding.embedding,
-    postgresql_using='hnsw',
-    postgresql_with={'m': 16, 'ef_construction': 64},
-    postgresql_ops={'embedding': 'vector_cosine_ops'})
-index.create(engine)
 Session = sessionmaker(bind=engine)
 
 
