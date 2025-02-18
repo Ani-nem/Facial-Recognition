@@ -1,11 +1,8 @@
-from sys import orig_argv
-
-import face_recognition
 from numpy import ndarray
 from ultralytics import YOLO
 import cv2
-from db import *
-from util import *
+from backend.db import *
+from backend.util import *
 import os
 
 
@@ -24,7 +21,7 @@ def get_class_ids(classes):
     return desired_ids
 
 #Dev helper, not needed for production
-def visualize_results(parent_directory: str = "./TrialsOrganized"):
+def visualize_results(parent_directory: str = "../datasets/TrialsOrganized"):
     with next(get_db()) as db:
         people = get_people(db)
         for person in people:
@@ -144,8 +141,8 @@ def facial_detection(directory: str):
 
 #Modifiable Constants
 desired_classes = ["person"]
-SOURCE_DATA_PATH = "./testData"
-SAVE_DATA_PATH = "./Trials"
+SOURCE_DATA_PATH = "../datasets/testData"
+SAVE_DATA_PATH = "../datasets/Trials"
 
 
 #Load the model and run inference on specified SOURCE directory
@@ -158,5 +155,5 @@ desired_ids = get_class_ids(desired_classes)
 # print_similarity_stats(stats)
 
 # copy_folders_with_images("./lfw_funneled", "./lfw_filtered", 10)
-detect_people_video("./video.mp4")
+detect_people_video("../datasets/video.mp4")
 visualize_results()
