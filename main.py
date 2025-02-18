@@ -3,12 +3,9 @@ from sys import orig_argv
 import face_recognition
 from numpy import ndarray
 from ultralytics import YOLO
-
 import cv2
 from db import *
 from util import *
-
-
 import os
 
 
@@ -65,13 +62,13 @@ def process_face(cropped_img : ndarray, db : Session, img_path : str = None):
         embedding = face_encodings[0].tolist()
         confidence = 1.0  # face_recognition doesn't provide confidence scores
 
-        similar_embedding, similar_person = similarity_search(db, embedding)
+        similar_embedding, similar_person, confidence = similarity_search(db, embedding)
 
         if similar_embedding is not None:
             add_embedding(db, embedding, confidence, img_path, similar_person)
             print(f"Added embedding to: Person {similar_person.id}")
         else:
-            new_person = register_person(db, embedding, confidence, img_path)
+            new_person = register_person(db, embedding, img_path)
             print(f"Registered Person {new_person.id}")
 
     except Exception as e:
@@ -161,5 +158,5 @@ desired_ids = get_class_ids(desired_classes)
 # print_similarity_stats(stats)
 
 # copy_folders_with_images("./lfw_funneled", "./lfw_filtered", 10)
-detect_people("./testData3")
+detect_people_video("./video.mp4")
 visualize_results()

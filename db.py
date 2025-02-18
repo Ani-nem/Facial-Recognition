@@ -37,7 +37,7 @@ class Embedding(Base):
     id: Mapped[int] = mapped_column(primary_key=True)
     embedding: Mapped[Vector] = mapped_column(Vector(VECTOR_SIZE))
     confidence : Mapped[float] = mapped_column()
-    img_path: Mapped[str] = mapped_column()
+    img_path: Mapped[Optional[str]] = mapped_column()
     person_id: Mapped[int] = mapped_column(ForeignKey('person.id'))
     person: Mapped[Person] = relationship(back_populates="embeddings")
 
@@ -91,7 +91,7 @@ def add_embedding(db: Session, embedding: list[float], confidence: float, img_pa
         print(f"Error adding embedding to {person.name}: {str(e)}")
         db.rollback()
 
-def register_person(db: Session, embedding: list[float],  confidence: float, img_path : str):
+def register_person(db: Session, embedding: list[float], img_path : str, confidence: float = 1.0):
     """
     Creates new unknown person with given embedding
     :param db: database session
@@ -123,31 +123,36 @@ def similarity_search(db: Session, orig_embedding : list[float]):
     Scans db for closest neighbour embedding of given vector using cosine distance
     :param db: database session
     :param orig_embedding: embedding vector
-    :return: the closest embedding, and the person it belongs to, or None for no match.
+    :return: the closest embedding, and the person it belongs to, and the confidence of the match. None, None, None for no match.
     """
     try:
 
         #Find similar embedding
         statement = (
-            select(Embedding)
+            select(
+                Embedding,
+                Embedding.embedding.cosine_distance(orig_embedding)
+            )
             .where(Embedding.embedding.cosine_distance(orig_embedding) <= 0.0558)
             .order_by(Embedding.embedding.cosine_distance(orig_embedding))
             .limit(1))
-        closest_embedding_obj = db.execute(statement).scalars().first()
+        result = db.execute(statement).first()
 
-        if closest_embedding_obj is None:
-            return None, None
+        if result is None:
+            return None, None, None
         else:
+            closest_embedding_obj, distance = result
+            similarity = 1-distance
             closest_embedding = closest_embedding_obj.embedding
             closest_person = closest_embedding_obj.person
-            return closest_embedding, closest_person
+            return closest_embedding, closest_person, similarity
 
     except SQLAlchemyError as e :
         print(f"Database Error occurred during Similarity Search: {str(e)}")
-        return None, None
+        return None, None, None
     except Exception as e :
         print(f"An Error occurred during Similarity Search: {str(e)}")
-        return None, None
+        return None, None, None
 
 def get_people(db: Session):
     """
