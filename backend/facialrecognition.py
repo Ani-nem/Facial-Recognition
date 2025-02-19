@@ -1,7 +1,7 @@
 from numpy import ndarray
 from ultralytics import YOLO
 import cv2
-from backend.db import *
+from backend.db import DataBaseModel, Session
 from util import *
 import os
 
@@ -9,10 +9,11 @@ import os
 class FaceRecognitionModel:
     SOURCE_DATA_PATH = "../datasets/testData"
     SAVE_DATA_PATH = "../datasets/Trials"
-    def __init__(self, model_path: str, classes: list[str]):
+    def __init__(self, model_path: str, classes: list[str], database_model: DataBaseModel):
         self.model = YOLO(model_path)
         desired_ids_dict = {value: key for key, value in self.model.names.items()}
         self.desired_ids = list(map(lambda x: desired_ids_dict[x], classes))
+        self.db = database_model
 
 
     def get_class_ids(self, classes: list[str]):
@@ -30,10 +31,10 @@ class FaceRecognitionModel:
 
 
     # Dev helper, not needed for production
-    @staticmethod
-    def visualize_results(parent_directory: str = "../datasets/TrialsOrganized"):
-        with next(get_db()) as db:
-            people = get_people(db)
+
+    def visualize_results(self, parent_directory: str = "../datasets/TrialsOrganized"):
+        with next(self.db.get_db()) as db:
+            people = self.db.get_people(db)
             for person in people:
                 person_dir = os.path.join(parent_directory, f"person_{person.id}")
                 os.makedirs(person_dir, exist_ok=True)
@@ -46,8 +47,7 @@ class FaceRecognitionModel:
                         new_img_path = os.path.join(person_dir, img_name)
                         cv2.imwrite(new_img_path, img)
 
-    @staticmethod
-    def process_face(cropped_img: ndarray, db: Session, img_path: str = None):
+    def process_face(self, cropped_img: ndarray, db: Session, img_path: str = None):
         """
         Processes face into embedding and stores embedding into db.
         :param cropped_img: numpy array of face image, or relative path to image
@@ -70,19 +70,19 @@ class FaceRecognitionModel:
             embedding = face_encodings[0].tolist()
 
 
-            similar_embedding, similar_person, confidence = similarity_search(db, embedding)
+            similar_embedding, similar_person, confidence = self.db.similarity_search(db, embedding)
 
             if similar_embedding is not None:
-                add_embedding(db, embedding, confidence, img_path, similar_person)
+                self.db.add_embedding(db, embedding, confidence, img_path, similar_person)
                 print(f"Added embedding to: Person {similar_person.id}")
             else:
-                new_person = register_person(db, embedding, img_path)
+                new_person = self.db.register_person(db, embedding, img_path)
                 print(f"Registered Person {new_person.id}")
 
         except Exception as e:
             print(f"Error occurred while generating embedding: {str(e)}")
 
-
+    #TODO: Add functionality to detect boxes and animals too
     def detect_people(self, directory: str):
         """
         Given a directory of images, detects people using Yolo and stores embeddings for each person in db
@@ -90,7 +90,7 @@ class FaceRecognitionModel:
         :return:
         """
 
-        with next(get_db()) as db:
+        with next(self.db.get_db()) as db:
             try:
                 results = self.model.predict(source=directory, classes=self.desired_ids, save_crop=True,
                                         project=self.SAVE_DATA_PATH, conf=0.8, max_det=1, batch=8)
@@ -120,7 +120,7 @@ class FaceRecognitionModel:
         :return: None
         """
 
-        with next(get_db()) as db:
+        with next(self.db.get_db()) as db:
             try:
                 results = self.model.predict(source=video, classes=self.desired_ids, stream=True, batch=8,
                                         save_crop=True, project=self.SAVE_DATA_PATH, conf=0.8, max_det=1)
@@ -142,7 +142,7 @@ class FaceRecognitionModel:
         :param directory: path to the directory containing images
         :return: None
         """
-        with next(get_db()) as db:
+        with next(self.db.get_db()) as db:
             for root, _, files in os.walk(directory):
                 for file in files:
                     if file.lower().endswith(('.png', '.jpg', '.jpeg', '.bmp', '.gif')):
@@ -160,6 +160,7 @@ class FaceRecognitionModel:
 # Modifiable Constants
 desired_classes = ["person"]
 # Load the model and run inference on specified SOURCE directory
-model = FaceRecognitionModel("yolo11n.pt", desired_classes)
-model.detect_people("../datasets/testData")
+database_model = DataBaseModel()
+model = FaceRecognitionModel("yolo11n.pt", desired_classes, database_model)
+model.detect_people("../datasets/testDataOnePerson")
 model.visualize_results()
