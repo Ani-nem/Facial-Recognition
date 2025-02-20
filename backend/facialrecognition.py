@@ -1,7 +1,7 @@
 from numpy import ndarray
 from ultralytics import YOLO
 import cv2
-from backend.db import DataBaseModel, Session
+from db import DataBaseModel, Session
 from util import *
 import os
 
@@ -31,7 +31,7 @@ class FaceRecognitionModel:
 
 
     # Dev helper, not needed for production
-
+    #TODO: Remove later in production
     def visualize_results(self, parent_directory: str = "../datasets/TrialsOrganized"):
         with next(self.db.get_db()) as db:
             people = self.db.get_people(db)
@@ -158,9 +158,9 @@ class FaceRecognitionModel:
 # copy_folders_with_images("./lfw_funneled", "./lfw_filtered", 10)
 
 # Modifiable Constants
-desired_classes = ["person"]
-# Load the model and run inference on specified SOURCE directory
-database_model = DataBaseModel()
-model = FaceRecognitionModel("yolo11n.pt", desired_classes, database_model)
-model.detect_people("../datasets/testDataOnePerson")
-model.visualize_results()
+# desired_classes = ["person"]
+# # Load the model and run inference on specified SOURCE directory
+# database_model = DataBaseModel()
+# model = FaceRecognitionModel("yolo11n.pt", desired_classes, database_model)
+# model.detect_people("../datasets/testDataOnePerson")
+# model.visualize_results()

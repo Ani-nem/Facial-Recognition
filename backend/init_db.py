@@ -1,4 +1,4 @@
-from backend.db import Base, engine
+from db import Base, engine
 
 def initialize_db():
     Base.metadata.create_all(engine)
