@@ -1,75 +1,24 @@
-from typing import Optional, Any, Generator
-from sqlalchemy import create_engine, ForeignKey, select, Index
+from typing import Any, Generator
+from sqlalchemy import select
 from sqlalchemy.exc import SQLAlchemyError
-from sqlalchemy.orm import declarative_base, Mapped, mapped_column, relationship, sessionmaker, Session
-from pgvector.sqlalchemy import Vector
-from dotenv import load_dotenv
-import os
-
-load_dotenv()  # Load variables from .env
-DATABASE_USER = os.environ.get("DATABASE_USER")
-DATABASE_PASSWORD = os.environ.get("DATABASE_PASSWORD")
-DATABASE_HOST = os.environ.get("DATABASE_HOST")
-DATABASE_PORT = os.environ.get("DATABASE_PORT")
-DATABASE_NAME = os.environ.get("DATABASE_NAME")
-
-if not all([DATABASE_USER, DATABASE_PASSWORD, DATABASE_HOST, DATABASE_PORT, DATABASE_NAME]):
-    raise ValueError("Missing database environment variables")
-
-DATABASE_URL = f"postgresql://{DATABASE_USER}:{DATABASE_PASSWORD}@{DATABASE_HOST}:{DATABASE_PORT}/{DATABASE_NAME}"
-Base = declarative_base()
-VECTOR_SIZE = 128
-
-class Person(Base):
-    #Table for Known People in dB
-    __tablename__ = 'person'
-    id: Mapped[int] = mapped_column(primary_key=True)
-    name: Mapped[Optional[str]] = mapped_column()
-    embeddings: Mapped[list["Embedding"]] = relationship(back_populates="person")
-
-    def __repr__(self):
-        return f"<Person(id={self.id}, name={self.name}, embeddings = {self.embeddings})>"
-
-# TODO: remove confidence from Embedding & update functions
-class Embedding(Base):
-    #Stores an embedding alongside the confidence score with it
-    __tablename__ = 'embedding'
-    id: Mapped[int] = mapped_column(primary_key=True)
-    embedding: Mapped[Vector] = mapped_column(Vector(VECTOR_SIZE))
-    confidence : Mapped[float] = mapped_column()
-    img_path: Mapped[Optional[str]] = mapped_column()
-    person_id: Mapped[int] = mapped_column(ForeignKey('person.id'))
-    person: Mapped[Person] = relationship(back_populates="embeddings")
-
-    __table_args__ = (
-        Index(
-            'embedding_hnsw_index',
-            embedding,
-            postgresql_using='hnsw',
-            postgresql_with={'m': 16, 'ef_construction': 64},
-            postgresql_ops={'embedding': 'vector_cosine_ops'}),
-    )
-
-    def __repr__(self):
-        return f"Embedding(id={self.id}, confidence = {self.confidence}, person_id={self.person_id}, person={self.person})"
+from sqlalchemy.orm import sessionmaker, Session
+from db_config import engine
+from models import Person, Embedding
 
 
-engine = create_engine(DATABASE_URL)
-Base.metadata.create_all(engine) # creates all the tables
-
-class DataBaseModel:
+class DataBaseConnection:
     def __init__(self):
-        self.Session =  sessionmaker(bind=engine)
-
+        self.Session = sessionmaker(autocommit=False, autoflush=False, bind=engine)
     def get_db(self) -> Generator[Session, Any, None]:
-        try :
+        try:
             db = self.Session()
             yield db
-        except Exception as e :
+        except Exception as e:
             print(f"Error: {str(e)}")
         finally:
             db.close()
 
+class DataBaseOps:
     @staticmethod
     def add_embedding(db: Session, embedding: list[float], confidence: float, img_path: str, person : Person):
         """
