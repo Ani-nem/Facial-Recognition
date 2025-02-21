@@ -2,7 +2,7 @@ from typing import Optional
 from sqlalchemy import  ForeignKey, Index
 from sqlalchemy.orm import Mapped, mapped_column, relationship
 from pgvector.sqlalchemy import Vector
-from db_config import Base, VECTOR_SIZE
+from .db_config import Base, VECTOR_SIZE
 
 
 class Person(Base):

@@ -2,11 +2,10 @@ from typing import Annotated, Optional, List
 from fastapi import FastAPI
 from fastapi.params import Depends
 from facialrecognition import FaceRecognitionModel
-from db import DataBaseOps, DataBaseConnection
+from database.db import DataBaseOps, DataBaseConnection
 from sqlalchemy.orm import Session
-from models import Person
 from pydantic import BaseModel, ConfigDict
-import db_config
+from database import db_config
 
 app = FastAPI()
 

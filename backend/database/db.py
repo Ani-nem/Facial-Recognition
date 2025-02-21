@@ -2,8 +2,8 @@ from typing import Any, Generator
 from sqlalchemy import select
 from sqlalchemy.exc import SQLAlchemyError
 from sqlalchemy.orm import sessionmaker, Session
-from db_config import engine
-from models import Person, Embedding
+from .db_config import engine
+from .models import Person, Embedding
 
 
 class DataBaseConnection:

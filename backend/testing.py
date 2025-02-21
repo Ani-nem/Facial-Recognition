@@ -1,5 +1,5 @@
 from facialrecognition import FaceRecognitionModel
-from db import DataBaseOps, DataBaseConnection
+from database.db import DataBaseOps, DataBaseConnection
 
 
 

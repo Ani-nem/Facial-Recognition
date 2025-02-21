@@ -1,7 +1,7 @@
 from numpy import ndarray
 from ultralytics import YOLO
 import cv2
-from db import DataBaseOps, Session
+from database.db import DataBaseOps, Session
 from util import *
 import os
 
