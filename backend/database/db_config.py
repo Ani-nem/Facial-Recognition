@@ -1,5 +1,6 @@
+from typing import Generator, Any
 from sqlalchemy import create_engine
-from sqlalchemy.orm import declarative_base, Session
+from sqlalchemy.orm import declarative_base, Session, sessionmaker
 from dotenv import load_dotenv
 import os
 
@@ -18,3 +19,14 @@ DATABASE_URL = f"postgresql://{DATABASE_USER}:{DATABASE_PASSWORD}@{DATABASE_HOST
 Base = declarative_base()
 engine = create_engine(DATABASE_URL)
 VECTOR_SIZE = 128
+
+Session = sessionmaker(autocommit=False, autoflush=False, bind=engine)
+
+def get_db() -> Generator[Session, Any, None]:
+    try:
+        db = Session()
+        yield db
+    except Exception as e:
+        print(f"Error: {str(e)}")
+    finally:
+        db.close()

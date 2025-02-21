@@ -5,7 +5,7 @@ from facialrecognition import FaceRecognitionModel
 from database.db import DataBaseOps, DataBaseConnection
 from sqlalchemy.orm import Session
 from pydantic import BaseModel, ConfigDict
-from database import db_config
+from database.db_config import Base, engine, get_db
 
 app = FastAPI()
 
@@ -18,13 +18,12 @@ class PersonModel(BaseModel):
     model_config = ConfigDict(from_attributes=True)
 
 
-db_config.Base.metadata.create_all(db_config.engine)
+Base.metadata.create_all(engine)
 desired_classes = ["person"]
-db_conn = DataBaseConnection()
 database_model = DataBaseOps()
 model = FaceRecognitionModel("yolo11n.pt", desired_classes, database_model)
 
-db_dependency = Annotated[Session, Depends(db_conn.get_db)]
+db_dependency = Annotated[Session, Depends(get_db)]
 
 
 @app.get("/")

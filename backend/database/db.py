@@ -5,7 +5,7 @@ from sqlalchemy.orm import sessionmaker, Session
 from .db_config import engine
 from .models import Person, Embedding
 
-
+#TODO: remove
 class DataBaseConnection:
     def __init__(self):
         self.Session = sessionmaker(autocommit=False, autoflush=False, bind=engine)
