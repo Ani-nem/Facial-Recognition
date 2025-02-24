@@ -1,8 +1,8 @@
 from numpy import ndarray
 from ultralytics import YOLO
 import cv2
-from database.db import DataBaseOps, Session
-from util import *
+from backend.database.db import DataBaseOps, Session
+from backend.util import *
 import os
 
 

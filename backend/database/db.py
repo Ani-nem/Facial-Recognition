@@ -70,6 +70,7 @@ class DataBaseOps:
             return updated_person
         except Exception as e :
             print(f"Error registering new person: {str(e)}")
+            db.rollback()
 
     @staticmethod
     def similarity_search(db: Session, orig_embedding : list[float]):

@@ -1,4 +1,6 @@
-from typing import Generator, Any
+from typing import Generator, Any, Annotated
+
+from fastapi.params import Depends
 from sqlalchemy import create_engine
 from sqlalchemy.orm import declarative_base, Session, sessionmaker
 from dotenv import load_dotenv
@@ -28,5 +30,9 @@ def get_db() -> Generator[Session, Any, None]:
         yield db
     except Exception as e:
         print(f"Error: {str(e)}")
+        db.rollback()
+        raise
     finally:
         db.close()
+
+db_dependency = Annotated[Session, Depends(get_db)]
