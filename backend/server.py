@@ -1,12 +1,14 @@
-from typing import Annotated, Optional, List
+from typing import  Optional, List
 from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
-from fastapi.params import Depends
-from facialrecognition import FaceRecognitionModel
-from database.db import DataBaseOps
-from sqlalchemy.orm import Session
+from backend.facialrecognition import FaceRecognitionModel
+from backend.database.db import DataBaseOps
 from pydantic import BaseModel, ConfigDict
-from database.db_config import Base, engine, get_db
+from backend.database.db_config import Base, engine, db_dependency
+from backend.auth.auth import router as auth_router
+from backend.auth.auth_config import user_dependency
+
+
 
 app = FastAPI()
 origins = [
@@ -35,8 +37,8 @@ desired_classes = ["person"]
 database_model = DataBaseOps()
 model = FaceRecognitionModel("yolo11n.pt", desired_classes, database_model)
 
-db_dependency = Annotated[Session, Depends(get_db)]
 
+app.include_router(auth_router)
 
 @app.get("/")
 async def root():
@@ -47,3 +49,8 @@ async def root():
 def get_people(db: db_dependency):
     people = database_model.get_people(db)
     return people
+
+
+@app.get("/hello")
+def hello(user: user_dependency):
+    return {"email": user.get("email"), "id": user.get("id")}
