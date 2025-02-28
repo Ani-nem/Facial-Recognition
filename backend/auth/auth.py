@@ -5,7 +5,7 @@ from fastapi.security import OAuth2PasswordRequestForm
 from flask.cli import load_dotenv
 from pydantic import BaseModel, EmailStr, ConfigDict
 import os
-from .auth_config import bcrypt_context
+from .auth_config import bcrypt_context, user_dependency
 from backend.database.db_config import db_dependency
 from backend.database.models import User
 from sqlalchemy.exc import IntegrityError
@@ -85,7 +85,9 @@ async def register_user(user: UserCreate, db: db_dependency): # Type hint db
         db.rollback()
         raise HTTPException(status_code=500, detail=f"An error occurred during registration:  {str(e)}") # Raise generic exception
 
-
+@router.get("/me")
+async def get_me(user: user_dependency):
+    return user
 
 
 

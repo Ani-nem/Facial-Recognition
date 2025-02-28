@@ -40,7 +40,7 @@ model = FaceRecognitionModel("yolo11n.pt", desired_classes, database_model)
 
 app.include_router(auth_router)
 
-@app.get("/")
+@app.get("api/")
 async def root():
     return {"message": "Hello World"}
 
