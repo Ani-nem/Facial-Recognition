@@ -50,9 +50,9 @@ class FaceRecognitionModel:
     def process_face(self, db: Session, cropped_img: ndarray, img_path: str = None):
         """
         Processes face into embedding and stores embedding into db.
-        :param cropped_img: numpy array of face image, or relative path to image
+        :param cropped_img: numpy array of face image, or relative path to image to process
         :param db: db session
-        :param img_path: path to image
+        :param img_path: path to image to store in embedding
         :return: None
         """
         try:
@@ -66,18 +66,21 @@ class FaceRecognitionModel:
                 print("No face detected in the image")
                 return
 
-            # Get the first face encoding (assuming one face per image)
-            embedding = face_encodings[0].tolist()
 
 
-            similar_embedding, similar_person, confidence = self.db_ops.similarity_search(db, embedding)
+            #Loop through every face(encoding) in the image
+            for encoding in face_encodings:
+                embedding = encoding.tolist()
+                similar_embedding, similar_person, confidence = self.db_ops.similarity_search(db, embedding)
 
-            if similar_embedding is not None:
-                self.db_ops.add_embedding(db, embedding, confidence, img_path, similar_person)
-                print(f"Added embedding to: Person {similar_person.id}")
-            else:
-                new_person = self.db_ops.register_person(db, embedding, img_path)
-                print(f"Registered Person {new_person.id}")
+                if similar_embedding is not None:
+                    self.db_ops.add_embedding(db, embedding, confidence, img_path, similar_person)
+                    print(f"Added embedding to: Person {similar_person.id}")
+                else:
+                    new_person = self.db_ops.register_person(db, embedding, img_path)
+                    print(f"Registered Person {new_person.id}")
+
+
 
         except Exception as e:
             print(f"Error occurred while generating embedding: {str(e)}")
@@ -92,8 +95,8 @@ class FaceRecognitionModel:
         """
 
         try:
-            results = self.model.predict(source=directory, classes=self.desired_ids, save_crop=True,
-                                         project=self.SAVE_DATA_PATH, conf=0.8, max_det=1, batch=8)
+            results = self.model.predict(source=directory, classes=self.desired_ids, save=True,
+                                         project=self.SAVE_DATA_PATH, conf=0.8, batch=8)
 
             for result in results:
                 boxes = result.boxes
@@ -104,7 +107,7 @@ class FaceRecognitionModel:
                 for box in boxes:
                     x1, y1, x2, y2 = map(int, box.xyxy[0].tolist())
                     cropped_img = img[y1:y2, x1:x2]
-                    crop_img_path = (f"{self.SAVE_DATA_PATH}/predict/crops/person/"
+                    crop_img_path = (f"{self.SAVE_DATA_PATH}/predict/"
                                      f"{os.path.splitext(os.path.basename(orig_img_path))[0]}.jpg")
                     print(crop_img_path)
                     self.process_face(db, cropped_img, crop_img_path)
