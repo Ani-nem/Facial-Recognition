@@ -91,7 +91,7 @@ class FaceRecognitionModel:
         Given a directory of images, detects people using Yolo and stores embeddings for each person in db
         :param db: database session
         :param directory: a directory of images to detect or path to a singular image
-        :return:
+        :return: numpy array of cropped image that holds the person
         """
 
         try:
@@ -103,14 +103,10 @@ class FaceRecognitionModel:
                 img = result.orig_img
                 orig_img_path = result.path
 
-                # TODO: implement batch processing
                 for box in boxes:
                     x1, y1, x2, y2 = map(int, box.xyxy[0].tolist())
                     cropped_img = img[y1:y2, x1:x2]
-                    crop_img_path = (f"{self.SAVE_DATA_PATH}/predict/"
-                                     f"{os.path.splitext(os.path.basename(orig_img_path))[0]}.jpg")
-                    print(crop_img_path)
-                    self.process_face(db, cropped_img, crop_img_path)
+                    return cropped_img
 
         except Exception as e:
             print(f"Error occurred while detecting person: {str(e)}")
