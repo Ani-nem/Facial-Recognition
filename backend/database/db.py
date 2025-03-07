@@ -123,3 +123,16 @@ class DataBaseOps:
         except Exception as e:
             print(f"Error getting people: {str(e)}")
             return []
+
+    @staticmethod
+    def create_person(db: Session, user_id:int):
+        try:
+            new_person = Person()
+            db.add(new_person)
+            db.flush()
+            db.commit()
+            return new_person.id
+        except Exception as e:
+            print(f"Error creating new person: {str(e)}")
+
+
