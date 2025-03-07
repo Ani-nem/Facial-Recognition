@@ -78,7 +78,7 @@ class DataBaseOps:
         Scans db for closest neighbour embedding of given vector using cosine distance
         :param db: database session
         :param orig_embedding: embedding vector
-        :return: the closest embedding, and the person it belongs to, and the confidence of the match. None, None, None for no match.
+        :return: the closest embedding, the id of the person it belongs to, and the confidence of the match. None, None, None for no match.
         """
         try:
 
@@ -99,8 +99,8 @@ class DataBaseOps:
                 closest_embedding_obj, distance = result
                 similarity = 1-distance
                 closest_embedding = closest_embedding_obj.embedding
-                closest_person = closest_embedding_obj.person
-                return closest_embedding, closest_person, similarity
+                closest_person_id = closest_embedding_obj.person.id
+                return closest_embedding, closest_person_id, similarity
 
         except SQLAlchemyError as e :
             print(f"Database Error occurred during Similarity Search: {str(e)}")
