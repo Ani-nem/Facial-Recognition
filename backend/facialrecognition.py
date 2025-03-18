@@ -86,27 +86,29 @@ class FaceRecognitionModel:
             print(f"Error occurred while generating embedding: {str(e)}")
 
     #TODO: Add functionality to detect boxes and animals too
-    def detect_people(self, db:Session, directory: str):
+    def detect_people(self, db:Session, source):
         """
-        Given a directory of images, detects people using Yolo and stores embeddings for each person in db
+        Given a source of images, detects people using Yolo and stores embeddings for each person in db
         :param db: database session
-        :param directory: a directory of images to detect or path to a singular image
-        :return: numpy array of cropped image that holds the person
+        :param source: a source of images to detect
+        :return: list of numpy arrays of cropped image that holds the person
         """
 
         try:
-            results = self.model.predict(source=directory, classes=self.desired_ids, save=True,
+            results = self.model.predict(source=source, classes=self.desired_ids, save=True,
                                          project=self.SAVE_DATA_PATH, conf=0.8, batch=8)
+            cropped_people = []
 
             for result in results:
                 boxes = result.boxes
                 img = result.orig_img
-                orig_img_path = result.path
 
                 for box in boxes:
                     x1, y1, x2, y2 = map(int, box.xyxy[0].tolist())
                     cropped_img = img[y1:y2, x1:x2]
-                    return cropped_img
+                    cropped_people.append(cropped_img)
+
+            return cropped_people
 
         except Exception as e:
             print(f"Error occurred while detecting person: {str(e)}")
