@@ -3,7 +3,7 @@ from sqlalchemy import select
 from sqlalchemy.exc import SQLAlchemyError
 from sqlalchemy.orm import sessionmaker, Session
 from .db_config import engine
-from .models import Person, Embedding
+from .models import Person, Embedding, User
 
 #TODO: remove
 class DataBaseConnection:
@@ -20,27 +20,27 @@ class DataBaseConnection:
 
 class DataBaseOps:
     @staticmethod
-    def add_embedding(db: Session, embedding: list[float], confidence: float, img_path: str, person : Person):
+    def add_embedding(db: Session, embedding: list[float], confidence: float, img_path: str, person_id : int):
         """
         Adds embedding to the specified person
         :param db: database session
         :param img_path: path to image
         :param embedding: embedding vector
         :param confidence: confidence value
-        :param person: person
+        :param person_id: id of the person
         :return: Updated person object, None if not found
         """
         try:
             #Add embedding to given person
             # noinspection PyTypeChecker
-            db.add(Embedding(embedding=embedding, person=person, img_path=img_path, confidence=confidence))
+            db.add(Embedding(embedding=embedding, person_id=person_id, img_path=img_path, confidence=confidence))
             db.commit()
 
-            person_statement = select(Person).where(Person.id == person.id)
+            person_statement = select(Person).where(Person.id == person_id)
             updated_person = db.execute(person_statement).scalars().first()
             return updated_person
         except Exception as e :
-            print(f"Error adding embedding to {person.name}: {str(e)}")
+            print(f"Error adding embedding to person {person_id}: {str(e)}")
             db.rollback()
 
     @staticmethod
@@ -73,7 +73,7 @@ class DataBaseOps:
             db.rollback()
 
     @staticmethod
-    def similarity_search(db: Session, orig_embedding : list[float]):
+    def similarity_search(db: Session, orig_embedding : list[float], user_id: int):
         """
         Scans db for closest neighbour embedding of given vector using cosine distance
         :param db: database session
@@ -88,7 +88,10 @@ class DataBaseOps:
                     Embedding,
                     Embedding.embedding.cosine_distance(orig_embedding)
                 )
-                .where(Embedding.embedding.cosine_distance(orig_embedding) <= 0.0558)
+                .where(Embedding.embedding.cosine_distance(orig_embedding) <= 0.0558,
+                       Embedding.person_id == (select(Person.id)
+                                               .where(Person.user_id == user_id)
+                                               .scalar_subquery()))
                 .order_by(Embedding.embedding.cosine_distance(orig_embedding))
                 .limit(1))
             result = db.execute(statement).first()
@@ -127,12 +130,13 @@ class DataBaseOps:
     @staticmethod
     def create_person(db: Session, user_id:int):
         try:
-            new_person = Person()
+            new_person = Person(user_id=user_id)
             db.add(new_person)
             db.flush()
             db.commit()
             return new_person.id
         except Exception as e:
             print(f"Error creating new person: {str(e)}")
+            db.rollback()
 
 
