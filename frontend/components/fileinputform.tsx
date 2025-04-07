@@ -1,7 +1,7 @@
 'use client'
 import {useState} from "react";
 import {Input} from "@/components/ui/input";
-import {Card, CardContent, CardHeader, CardTitle} from "@/components/ui/card";
+import {Card, CardContent, CardDescription, CardHeader, CardTitle} from "@/components/ui/card";
 import {Button} from "@/components/ui/button";
 import {LucideSend, CircleAlert, Upload, Trash2} from "lucide-react";
 import axiosInstance from "@/lib/axios";
@@ -90,6 +90,18 @@ const FileInputForm = () => {
         }
     }
 
+    const handleFileRemove = (id: string) => {
+        const new_images = images.filter((img) => {
+            if (img.id == id) {
+                URL.revokeObjectURL(img.preview);
+                return false;
+            }
+            return true;
+        })
+
+        setImages(new_images);
+    }
+
     const handleDragOver = (e: React.DragEvent) => {
         e.preventDefault()
         setIsDragging(true)
@@ -109,6 +121,7 @@ const FileInputForm = () => {
         <Card className={"flex flex-col"}>
             <CardHeader>
                 <CardTitle className={"font-semibold text-2xl"}>Upload</CardTitle>
+                <CardDescription className={"font-medium"}>Upload a couple photos to be sorted</CardDescription>
             </CardHeader>
             <CardContent>
                 <form onSubmit={handleOnSubmit}>
@@ -123,7 +136,7 @@ const FileInputForm = () => {
                         }}>
                     </Input>
                     <Card
-                        className={cn("p-6 h-[175] border-dashed border-2 cursor-pointer hover:bg-popover", isDragging ? "bg-primary" : "bg-card")}
+                        className={cn("p-6 h-[200] border-dashed border-2 cursor-pointer hover:bg-popover", isDragging ? "bg-primary" : "bg-card")}
                         onClick={() => {
                             document.getElementsByName("image_input")[0].click()
                         }}
@@ -136,17 +149,16 @@ const FileInputForm = () => {
                             <p className={"font-normal text-sm"}>Supports PNG, JPEG, HEIC</p>
                         </div>
                     </Card>
-                    {message}
-                    <Button type={"submit"}><LucideSend></LucideSend></Button>
-                    <Button type={"reset"} onClick={handleClear}>Clear All</Button>
 
-
-                    <Card className={cn((images.length > 0) ? "border-none shadow-none overflow-hidden" : "hidden")}>
+                    {/*The individual images themselves*/}
+                    <Card className={cn("relative", (images.length > 0) ? "border-none shadow-none overflow-hidden" : "hidden")}>
                         <ul className={"grid lg:grid-cols-3 md:grid-cols-2"}>
                             {images.map((img) => (
-                                <li key={uuidv4()}>
+                                <li key={img.id}>
                                     <Card className={"group aspect-square overflow-hidden m-1 relative"}>
-                                        <Button type={"button"} variant={"outline"}
+                                        <Button onClick={() => {
+                                            handleFileRemove(img.id)
+                                        }} type={"button"} variant={"outline"}
                                                 className={"opacity-0 group-hover:opacity-100 hover:bg-popover transition-opacity h-8 w-5 bg-black absolute right-2 top-2"}>
                                             <Trash2 className={"text-red-700"}></Trash2>
                                         </Button>
@@ -157,9 +169,20 @@ const FileInputForm = () => {
                         </ul>
                     </Card>
 
+                    <div className={cn((images.length > 0) ? "flex" : "hidden")}>
+                        <Button className={"w-1/2 bg-red-400 font-semibold rounded-r-none"}
+                                type={"reset"}
+                                onClick={handleClear}>
+                            Clear All</Button>
+                        <Button className={"w-1/2 rounded-l-none"} type={"submit"}>
+                            Submit<LucideSend></LucideSend>
+                        </Button>
+
+                    </div>
 
                 </form>
             </CardContent>
+
         </Card>
     )
 }
