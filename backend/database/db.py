@@ -116,18 +116,18 @@ class DataBaseOps:
             return None, None, None
 
     @staticmethod
-    def get_people(db: Session):
+    def get_people(db: Session, user_id: int):
         """
-        Returns all people in the database
-        :param db: database session
-        :return: list of people
+        Returns all people ids in the database connected to the current user
+        :param db: database session, userid
+        :return: list of people ids
         """
         try:
-            statement = select(Person)
+            statement = select(Person.id).where(Person.user_id == user_id)
             people = db.execute(statement).scalars().all()
             return people
         except Exception as e:
-            print(f"Error getting people: {str(e)}")
+            print(f"Error retrieving people ids: {str(e)}")
             return []
 
     @staticmethod
