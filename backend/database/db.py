@@ -141,3 +141,16 @@ class DataBaseOps:
         except Exception as e:
             print(f"Error creating new person: {str(e)}")
             db.rollback()
+
+    @staticmethod
+    def get_person_images(db: Session, user_id: int, person: int):
+
+        try:
+            statement = select(Embedding.img_path).where(Embedding.person_id == person)
+            result = db.execute(statement)
+
+            paths = [row.img_path for row in result]
+            return paths
+
+        except Exception as e:
+            print(f"Error retrieving image path: {str(e)}")
