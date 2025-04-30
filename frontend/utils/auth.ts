@@ -37,6 +37,18 @@ export const login = async(email: string, password :string): Promise<Boolean> =>
     }
 };
 
+
+export const register  = async (email: string, password: string) => {
+    try {
+       const registerJson = {"email": email, "password": password}
+       const response = await axiosInstance.post("auth/register", registerJson);
+       return (response.status === 201)
+    } catch (exception){
+        console.log(exception);
+        return false;
+    }
+}
+
 export const logout = () => {
     localStorage.removeItem('access_token');
 };
