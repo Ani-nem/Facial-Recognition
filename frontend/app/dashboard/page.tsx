@@ -2,6 +2,7 @@
 import ProtectedRoute from "@/components/protectedRoute";
 import {useEffect, useState} from "react";
 import FileInputForm from "@/components/fileinputform";
+import GroupedImages from "@/components/groupedImages";
 import axiosInstance from "@/lib/axios";
 import {useRouter} from "next/navigation";
 
@@ -17,7 +18,6 @@ interface Person {
 
 const Page = () => {
     const [message, setMessage] = useState<User>({email: "", id: 0});
-    const [data, setData] = useState<Person[]>([]);
     const router = useRouter();
 
     useEffect(() => {
@@ -32,7 +32,6 @@ const Page = () => {
 
             try {
                 const data = await axiosInstance.get("people");
-                setData(data.data);
             } catch (error) {
                 console.error("Error fetching data:", error);
             }
@@ -43,15 +42,17 @@ const Page = () => {
 
     return (
         <ProtectedRoute>
-            <div className={"flex flex-col items-center justify-center min-w-full min-h-screen"}>
-                <p>Email: {message.email}</p>
-                <p>ID: {message.id}</p>
+            <div className={"flex flex-col items-center min-w-full min-h-screen pt-16"}>
                 <div className={"w-1/2"}>
                     <FileInputForm></FileInputForm>
                 </div>
-
             </div>
+            <GroupedImages>
+
+            </GroupedImages>
         </ProtectedRoute>
+
+
     );
 }
 
