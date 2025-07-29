@@ -21,7 +21,7 @@ AUTH_ACCESS_EXPIRE_MINUTES = int(os.environ.get("AUTH_ACCESS_EXPIRE_MINUTES"))
 router = APIRouter(prefix="/auth", tags=["auth"])
 
 class UserCreate(BaseModel):
-    email: EmailStr
+    email: str
     password: str
 
 class Token(BaseModel):

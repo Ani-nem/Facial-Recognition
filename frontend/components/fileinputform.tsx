@@ -146,12 +146,13 @@ const FileInputForm = () => {
                         <div className={"flex flex-col items-center justify-around h-full"}>
                             <Upload className={"h-10 w-10 text-secondary-foreground"}></Upload>
                             <h2 className={"font-semibold text-md"}>Drag images here or click to browse</h2>
-                            <p className={"font-normal text-sm"}>Supports PNG, JPEG, HEIC</p>
+                            <p className={"font-normal text-sm"}>Supports PNG, JPEG</p>
                         </div>
                     </Card>
 
                     {/*The individual images themselves*/}
-                    <Card className={cn("relative", (images.length > 0) ? "border-none shadow-none overflow-hidden" : "hidden")}>
+                    <Card
+                        className={cn("relative", (images.length > 0) ? "border-none shadow-none overflow-hidden" : "hidden")}>
                         <ul className={"grid lg:grid-cols-3 md:grid-cols-2"}>
                             {images.map((img) => (
                                 <li key={img.id}>
