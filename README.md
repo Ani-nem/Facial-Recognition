@@ -9,14 +9,15 @@ This project is a facial recognition system that allows users to upload, organiz
 ## Tech Stack
 
 ### Frontend
-- **Next.js** - React framework with server-side rendering
-- **React** - UI component library
+- **Next.js + React** - React framework with server-side rendering
+- **SHADcn** - UI component library
 - **TypeScript** - Type-safe JavaScript
 - **Tailwind CSS** - Utility-first CSS framework
 
 ### Backend
 - **Python** - Primary backend language
 - **dlib** - Machine learning library for facial recognition
+- **Ultralytics yolov11** - Machine learning library for Object Detection
 - **AWS S3** - Cloud based Image storage
 
 ## Features
@@ -87,12 +88,6 @@ This project is a facial recognition system that allows users to upload, organiz
   - `/lib` - Utility functions and configuration
 
 - `/backend` - Python backend application (details not fully visible in the provided code)
-
-## Key Components
-
-- **ProtectedRoute** - Authentication wrapper for secure pages
-- **FileInputForm** - Component for uploading images
-- **GroupedImages** - Component for displaying and managing grouped images
 
 ## Development
 
