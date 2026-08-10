@@ -1,20 +1,31 @@
-# Ignore Mac system files
+# Python
+__pycache__/
+*.py[cod]
+.venv/
+venv/
+*.egg-info/
+.eggs/
+build/
+dist/
+.pytest_cache/
+.coverage
+htmlcov/
+
+# faceorg
+*.db
+*.db-wal
+*.db-shm
+.faceorg.db
+by-person/
+faceorg.toml
+
+# Environment / secrets
+.env
+
+# macOS
+.DS_Store
 .DS_store
 
-# Ignore node_modules folder
-node_modules
-
-# Ignore all text files
-*.txt
-
-# Ignore files related to API keys
-backend/.env
-
-# Ignore SASS config files
-.sass-cache
-
-# Ignore all images
-*.jpg
-
-
+# Editors
 .idea
+.vscode
