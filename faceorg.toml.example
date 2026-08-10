@@ -1,0 +1,29 @@
+# faceorg configuration (copy to faceorg.toml and edit).
+#
+# Precedence: CLI flag > this file > built-in default.
+# Any value here is overridden by the matching command-line flag.
+
+[paths]
+# Source photo library to scan (recursively). Override per run with --src.
+src = "/Users/me/Photos"
+# Where `apply` builds the by-person/ tree. Override per run with --dest.
+dest = "/Users/me/Photos-by-person"
+# The persistent "brain". Defaults to ~/.faceorg/faces.db (one global DB
+# shared across all libraries). Override with --db.
+db = "/Users/me/.faceorg/faces.db"
+
+[detect]
+model = "hog"     # "hog" (fast, CPU) or "cnn" (accurate, GPU-preferred)
+upsample = 1      # number_of_times_to_upsample; raise to catch smaller faces
+jitters = 1       # num_jitters when encoding; higher = slower, slightly better
+
+[match]
+tolerance = 0.6   # Euclidean distance; lower = stricter (fewer false merges)
+
+[apply]
+mode = "symlink"  # "symlink" (default) or "copy"
+min_photos = 1    # only emit people appearing in >= N photos
+prune = true      # remove stale links in by-person/ on re-apply
+
+[scan]
+extensions = [".jpg", ".jpeg", ".png", ".bmp", ".tiff", ".tif", ".webp", ".heic"]
