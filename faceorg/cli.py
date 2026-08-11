@@ -316,5 +316,45 @@ def tune(
     typer.echo(format_similarity_stats(stats))
 
 
+# --------------------------------------------------------------------------- #
+# recluster
+# --------------------------------------------------------------------------- #
+@app.command()
+def recluster(
+    ctx: typer.Context,
+    threshold: Optional[float] = typer.Option(
+        None, "--threshold", help="Agglomerative distance threshold (default 0.55)."
+    ),
+    linkage: Optional[str] = typer.Option(
+        None, "--linkage", help="average | complete | single."
+    ),
+) -> None:
+    """Batch re-cluster ALL faces for best accuracy (recommended after a big scan).
+
+    Rebuilds people from scratch using agglomerative average-linkage and carries
+    over your assigned names by majority vote. Fixes the over-merging that greedy
+    incremental matching can produce at scale.
+    """
+    from faceorg.cluster import recluster as run_recluster
+
+    config = _build_config(
+        ctx,
+        cluster_threshold=threshold,
+        cluster_linkage=linkage,
+    )
+    with _open_db(config) as db:
+        typer.echo(
+            f"Re-clustering all faces "
+            f"(linkage={config.cluster_linkage}, threshold={config.cluster_threshold})..."
+        )
+        stats = run_recluster(
+            db, config.cluster_threshold, linkage=config.cluster_linkage
+        )
+    typer.echo(
+        f"Done. {stats.n_faces} faces -> {stats.n_clusters} people "
+        f"({stats.names_preserved} names preserved)."
+    )
+
+
 if __name__ == "__main__":
     app()

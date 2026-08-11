@@ -18,7 +18,11 @@ upsample = 1      # number_of_times_to_upsample; raise to catch smaller faces
 jitters = 1       # num_jitters when encoding; higher = slower, slightly better
 
 [match]
-tolerance = 0.55  # Euclidean distance; lower = stricter (fewer false merges)
+tolerance = 0.50  # Euclidean distance; lower = stricter (fewer false merges)
+
+[recluster]
+cluster_threshold = 0.55  # distance threshold for batch `recluster`
+cluster_linkage = "average"  # average | complete | single
 
 [apply]
 mode = "symlink"  # "symlink" (default) or "copy"

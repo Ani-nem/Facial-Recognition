@@ -331,6 +331,72 @@ class Database:
         )
         return [_to_face(row) for row in cur.fetchall()]
 
+    def load_all_faces(self) -> tuple[list[int], np.ndarray]:
+        """Return (face_ids, embedding matrix [N,128]) for ALL faces.
+
+        Unlike load_all_embeddings, this includes faces regardless of person
+        assignment — used by batch recluster which reassigns everything.
+        """
+        cur = self.conn.execute("SELECT id, embedding FROM faces ORDER BY id")
+        face_ids: list[int] = []
+        embeddings: list[np.ndarray] = []
+        for row in cur.fetchall():
+            face_ids.append(row["id"])
+            embeddings.append(blob_to_enc(row["embedding"]))
+        if not embeddings:
+            return [], np.empty((0, 128), dtype=np.float64)
+        return face_ids, np.vstack(embeddings)
+
+    def get_face_person_names(self) -> dict[int, str | None]:
+        """Map face_id -> current person name (or None) — for name carry-over."""
+        cur = self.conn.execute(
+            """SELECT f.id AS fid, p.name AS name
+               FROM faces f LEFT JOIN persons p ON p.id = f.person_id"""
+        )
+        return {row["fid"]: row["name"] for row in cur.fetchall()}
+
+    def rebuild_persons(
+        self,
+        face_to_cluster: dict[int, int],
+        cluster_names: dict[int, str | None],
+        when: float,
+    ) -> dict[int, int]:
+        """Atomically replace all persons with a fresh set from a batch cluster.
+
+        :param face_to_cluster: face_id -> cluster label (ints).
+        :param cluster_names: cluster label -> name to preserve (or None).
+        :param when: timestamp for created/updated.
+        :return: mapping cluster label -> new person_id.
+        """
+        cur = self.conn.cursor()
+        try:
+            cur.execute("BEGIN")
+            # Drop all faces' person links and remove old persons.
+            cur.execute("UPDATE faces SET person_id = NULL, match_distance = NULL")
+            cur.execute("DELETE FROM persons")
+
+            # Create one person per cluster label.
+            label_to_pid: dict[int, int] = {}
+            for label in sorted(set(face_to_cluster.values())):
+                name = cluster_names.get(label)
+                cur.execute(
+                    """INSERT INTO persons (name, is_ignored, created_at, updated_at)
+                       VALUES (?, 0, ?, ?)""",
+                    (name, when, when),
+                )
+                label_to_pid[label] = cur.lastrowid
+
+            # Point each face at its new person.
+            cur.executemany(
+                "UPDATE faces SET person_id = ? WHERE id = ?",
+                [(label_to_pid[lbl], fid) for fid, lbl in face_to_cluster.items()],
+            )
+            self.conn.commit()
+            return label_to_pid
+        except Exception:
+            self.conn.rollback()
+            raise
+
     def iter_person_image_paths(self) -> dict[int, list[str]]:
         """Map person_id -> sorted list of distinct source image paths.
 

@@ -31,11 +31,16 @@ DEFAULT_EXTENSIONS = (
 )
 
 # face_recognition uses Euclidean distance between 128-d encodings (lower =
-# same person). The library's own default is 0.6, but that over-merges
-# similar-looking people in practice; on our LFW smoke test same-person
-# distances topped out at ~0.56 while the closest different pair was ~0.59, so
-# 0.55 gives a cleaner split. Overridable via --tolerance.
-DEFAULT_TOLERANCE = 0.55
+# same person). The library's own default is 0.6, but that over-merges badly.
+# A large scale test (4,324 LFW images / 158 people) showed greedy matching
+# chains at 0.55 (84% purity) but is much safer at 0.50 (~98% purity). Splitting
+# is recoverable via `merge`; merging is not — so we default conservative.
+# Run `faceorg recluster` after a big scan for the highest-accuracy grouping.
+DEFAULT_TOLERANCE = 0.50
+
+# Default distance threshold for batch `recluster` (agglomerative average
+# linkage). 0.55 scored best on the scale test (ARI 0.990); overridable.
+DEFAULT_CLUSTER_THRESHOLD = 0.55
 
 
 @dataclass(frozen=True)
@@ -54,6 +59,10 @@ class Config:
 
     # match
     tolerance: float = DEFAULT_TOLERANCE
+
+    # recluster (batch)
+    cluster_threshold: float = DEFAULT_CLUSTER_THRESHOLD
+    cluster_linkage: str = "average"  # average | complete | single
 
     # apply
     mode: str = "symlink"  # "symlink" | "copy"
@@ -150,6 +159,7 @@ _SECTION_KEYS = {
     "paths": {"src", "dest", "db"},
     "detect": {"model", "upsample", "jitters"},
     "match": {"tolerance"},
+    "recluster": {"cluster_threshold", "cluster_linkage"},
     "apply": {"mode", "min_photos", "prune"},
     "scan": {"extensions"},
 }

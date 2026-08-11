@@ -10,7 +10,7 @@ from faceorg.config import DEFAULT_DB_PATH, Config
 def test_defaults():
     c = Config.from_sources()
     assert c.model == "hog"
-    assert c.tolerance == 0.55
+    assert c.tolerance == 0.50
     assert c.mode == "symlink"
     assert c.db == DEFAULT_DB_PATH.expanduser()
     assert isinstance(c.extensions, tuple)
@@ -19,7 +19,7 @@ def test_defaults():
 def test_cli_override_and_none_ignored():
     c = Config.from_sources({"model": "cnn", "tolerance": None})
     assert c.model == "cnn"
-    assert c.tolerance == 0.55  # None override ignored
+    assert c.tolerance == 0.50  # None override ignored
 
 
 def test_paths_expanded():
