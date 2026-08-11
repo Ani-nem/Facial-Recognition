@@ -21,7 +21,7 @@ dependencies = [
 
 [project.optional-dependencies]
 cluster = ["scikit-learn>=1.4"]
-dev = ["pytest>=8", "pytest-cov"]
+dev = ["pytest>=8", "pytest-cov", "scikit-learn>=1.4", "pillow>=10"]
 
 [project.scripts]
 faceorg = "faceorg.cli:app"
