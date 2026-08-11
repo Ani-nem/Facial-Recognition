@@ -16,6 +16,9 @@ db = "/Users/me/.faceorg/faces.db"
 model = "hog"     # "hog" (fast, CPU) or "cnn" (accurate, GPU-preferred)
 upsample = 1      # number_of_times_to_upsample; raise to catch smaller faces
 jitters = 1       # num_jitters when encoding; higher = slower, slightly better
+max_dimension = 1400  # downscale longest side to N px for detection (0 = full res).
+                      # Biggest speed lever: a 24MP photo drops from ~5s to ~0.2s.
+                      # Lower = faster but may miss tiny/distant faces.
 
 [match]
 tolerance = 0.50  # Euclidean distance; lower = stricter (fewer false merges)

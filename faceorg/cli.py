@@ -85,6 +85,11 @@ def scan(
     ),
     upsample: Optional[int] = typer.Option(None, "--upsample"),
     jitters: Optional[int] = typer.Option(None, "--jitters"),
+    max_dimension: Optional[int] = typer.Option(
+        None,
+        "--max-dimension",
+        help="Downscale longest side to this many px for detection (0 = full res).",
+    ),
     force: bool = typer.Option(False, "--force", help="Reprocess every image."),
     rehash: bool = typer.Option(
         False, "--rehash", help="Verify content hash even if size+mtime unchanged."
@@ -103,6 +108,7 @@ def scan(
         tolerance=tolerance,
         upsample=upsample,
         jitters=jitters,
+        max_dimension=max_dimension,
     )
     if config.src is None:
         raise typer.BadParameter("No source path. Pass --src or set it in config.")

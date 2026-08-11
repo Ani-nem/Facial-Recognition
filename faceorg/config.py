@@ -42,6 +42,10 @@ DEFAULT_TOLERANCE = 0.50
 # linkage). 0.55 scored best on the scale test (ARI 0.990); overridable.
 DEFAULT_CLUSTER_THRESHOLD = 0.55
 
+# Longest-side pixel cap for detection. 1400px keeps prominent faces easily
+# detectable while cutting 24MP detection time ~25x. 0 = full resolution.
+DEFAULT_MAX_DIMENSION = 1400
+
 
 @dataclass(frozen=True)
 class Config:
@@ -56,6 +60,13 @@ class Config:
     model: str = "hog"  # "hog" | "cnn"
     upsample: int = 1
     jitters: int = 1
+    # Downscale each image so its longest side is <= max_dimension before
+    # detection, then scale face boxes back to original coords. This is the
+    # single biggest speed lever: detection time scales with pixel count, so a
+    # 24MP photo drops from ~5s to ~0.2s at 1400px. 0 disables downscaling
+    # (full resolution — slower, but catches tiny/distant faces). Originals are
+    # never modified. Overridable via --max-dimension.
+    max_dimension: int = DEFAULT_MAX_DIMENSION
 
     # match
     tolerance: float = DEFAULT_TOLERANCE
@@ -157,7 +168,7 @@ def _load_config_file(config_path: Path | None) -> dict:
 # Map TOML [section] keys onto the flat Config field names.
 _SECTION_KEYS = {
     "paths": {"src", "dest", "db"},
-    "detect": {"model", "upsample", "jitters"},
+    "detect": {"model", "upsample", "jitters", "max_dimension"},
     "match": {"tolerance"},
     "recluster": {"cluster_threshold", "cluster_linkage"},
     "apply": {"mode", "min_photos", "prune"},

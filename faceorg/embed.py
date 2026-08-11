@@ -31,6 +31,40 @@ def load_rgb(path: str | Path) -> np.ndarray:
     return cv2.cvtColor(bgr, cv2.COLOR_BGR2RGB)
 
 
+def downscale(rgb: np.ndarray, max_dimension: int) -> tuple[np.ndarray, float]:
+    """Downscale so the longest side is <= max_dimension.
+
+    Returns (possibly-smaller image, scale) where ``scale`` is
+    downscaled/original (<= 1.0). Detection runs on the smaller image; multiply
+    resulting bbox coords by 1/scale to map back to the original. A
+    max_dimension of 0 (or an image already small enough) is a no-op (scale 1).
+    """
+    if max_dimension <= 0:
+        return rgb, 1.0
+    import cv2
+
+    h, w = rgb.shape[:2]
+    longest = max(h, w)
+    if longest <= max_dimension:
+        return rgb, 1.0
+    scale = max_dimension / longest
+    resized = cv2.resize(
+        rgb, (max(1, round(w * scale)), max(1, round(h * scale))), interpolation=cv2.INTER_AREA
+    )
+    return resized, scale
+
+
+def rescale_bboxes(locations: list[BBox], scale: float) -> list[BBox]:
+    """Map bboxes detected on a downscaled image back to original coords."""
+    if scale == 1.0:
+        return locations
+    inv = 1.0 / scale
+    return [
+        (round(t * inv), round(r * inv), round(b * inv), round(l * inv))
+        for (t, r, b, l) in locations
+    ]
+
+
 def encode_faces(
     rgb: np.ndarray, locations: list[BBox], jitters: int = 1
 ) -> list[np.ndarray]:

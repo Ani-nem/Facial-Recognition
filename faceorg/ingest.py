@@ -21,7 +21,7 @@ import numpy as np
 from faceorg.config import Config
 from faceorg.db import Database
 from faceorg.detect import BBox, detect_faces
-from faceorg.embed import encode_faces, load_rgb
+from faceorg.embed import downscale, encode_faces, load_rgb, rescale_bboxes
 from faceorg.match import Matcher
 
 # Injectable seams -----------------------------------------------------------
@@ -109,8 +109,12 @@ def scan(
 
         try:
             rgb = loader_fn(spath)
-            locations = detector_fn(rgb, config.model, config.upsample)
-            encodings = encoder_fn(rgb, locations, config.jitters)
+            # Detect + encode on a downscaled copy for speed; store bboxes in
+            # original-image coordinates. Originals are never modified.
+            work, scale = downscale(rgb, config.max_dimension)
+            locations = detector_fn(work, config.model, config.upsample)
+            encodings = encoder_fn(work, locations, config.jitters)
+            locations = rescale_bboxes(locations, scale)
         except Exception as exc:  # noqa: BLE001 - record and continue scanning
             db.mark_image_error(image_id, str(exc), clock())
             stats.images_error += 1

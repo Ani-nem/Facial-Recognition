@@ -72,6 +72,22 @@ Each image is tracked by path, size, and modification time. On re-scan:
 - `--force` reprocesses everything; `--rehash` verifies content hashes even when
   size + mtime look unchanged.
 
+## Performance
+
+Detection time scales with image **resolution**, not much else. By default
+faceorg downscales each image to a 1400px longest side before detecting faces
+(originals are never touched), which keeps things fast on any hardware:
+
+| Working resolution | Time per 24MP photo | 10k photos |
+|--------------------|---------------------|------------|
+| Full 24MP (`--max-dimension 0`) | ~5 s | hours |
+| 1400px (default) | ~0.2 s | ~35 min |
+
+Lower `max_dimension` for more speed; raise it (or set `0`) if you need to
+catch very small/distant faces in group shots. RAM use is minimal — images are
+processed one at a time and each stored face is ~1 KB, so even 100k faces is
+~100 MB. `recluster` is pure vector math (seconds for thousands of faces).
+
 ## Configuration
 
 Settings resolve as **CLI flag > `faceorg.toml` > built-in default**. Copy
@@ -81,6 +97,7 @@ Settings resolve as **CLI flag > `faceorg.toml` > built-in default**. Copy
 |-----|---------|---------|
 | `db` | `~/.faceorg/faces.db` | Global brain shared across libraries |
 | `detect.model` | `hog` | `hog` (fast, CPU) or `cnn` (accurate, GPU) |
+| `detect.max_dimension` | `1400` | Downscale longest side to N px for detection (0 = full res) |
 | `match.tolerance` | `0.50` | Euclidean match distance; lower = stricter |
 | `apply.mode` | `symlink` | `symlink` or `copy` |
 | `apply.min_photos` | `1` | Only output people in ≥ N photos |
