@@ -18,7 +18,7 @@ upsample = 1      # number_of_times_to_upsample; raise to catch smaller faces
 jitters = 1       # num_jitters when encoding; higher = slower, slightly better
 
 [match]
-tolerance = 0.6   # Euclidean distance; lower = stricter (fewer false merges)
+tolerance = 0.55  # Euclidean distance; lower = stricter (fewer false merges)
 
 [apply]
 mode = "symlink"  # "symlink" (default) or "copy"

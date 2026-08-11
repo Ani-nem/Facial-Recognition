@@ -81,7 +81,7 @@ Settings resolve as **CLI flag > `faceorg.toml` > built-in default**. Copy
 |-----|---------|---------|
 | `db` | `~/.faceorg/faces.db` | Global brain shared across libraries |
 | `detect.model` | `hog` | `hog` (fast, CPU) or `cnn` (accurate, GPU) |
-| `match.tolerance` | `0.6` | Euclidean match distance; lower = stricter |
+| `match.tolerance` | `0.55` | Euclidean match distance; lower = stricter |
 | `apply.mode` | `symlink` | `symlink` or `copy` |
 | `apply.min_photos` | `1` | Only output people in ≥ N photos |
 

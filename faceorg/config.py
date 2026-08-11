@@ -30,9 +30,12 @@ DEFAULT_EXTENSIONS = (
     ".heic",
 )
 
-# face_recognition uses Euclidean distance between 128-d encodings; the
-# library's documented default match tolerance is 0.6 (lower = same person).
-DEFAULT_TOLERANCE = 0.6
+# face_recognition uses Euclidean distance between 128-d encodings (lower =
+# same person). The library's own default is 0.6, but that over-merges
+# similar-looking people in practice; on our LFW smoke test same-person
+# distances topped out at ~0.56 while the closest different pair was ~0.59, so
+# 0.55 gives a cleaner split. Overridable via --tolerance.
+DEFAULT_TOLERANCE = 0.55
 
 
 @dataclass(frozen=True)
