@@ -17,8 +17,8 @@ stay exactly where they are.
 - **Configurable** — source/dest paths, symlink vs copy, detector model,
   match tolerance, minimum photos per person, and more.
 
-> Status: **Phase 1** (scan / list / rename / merge / status). The `apply`
-> command that builds the output tree lands in Phase 2.
+> Status: **usable end-to-end** — `scan` → `recluster` → name people → `apply`
+> builds the symlink tree. Interactive TUI is still to come.
 
 ## Install
 
@@ -44,22 +44,25 @@ pip install -e .
 # 1. Scan your library (recursive). First run auto-buckets everyone.
 faceorg scan --src ~/Photos
 
-# 2. See who was found.
-faceorg list --sort count
+# 2. Re-cluster for best accuracy after a big first scan (recommended).
+faceorg recluster
 
-# 3. Figure out who a bucket is, then name them.
+# 3. See who was found, figure out who a bucket is, then name them.
+faceorg list --sort count
 faceorg show 7
 faceorg rename 7 Alice
 
 # 4. Fix an over-split (person 12 is also Alice).
 faceorg merge 12 7
 
-# 5. (Phase 2) Build the by-person/ symlink tree.
-# faceorg apply --dest ~/Photos-by-person
+# 5. Build the by-person/ symlink tree (preview first with --dry-run).
+faceorg apply --dest ~/Photos-by-person --dry-run
+faceorg apply --dest ~/Photos-by-person
 
 # Later, after adding new photos — only new files are processed,
-# and Alice's new photos attach to her automatically.
+# Alice's new photos attach to her, then re-apply to update the tree.
 faceorg scan --src ~/Photos
+faceorg apply --dest ~/Photos-by-person
 ```
 
 ## How incremental scanning works

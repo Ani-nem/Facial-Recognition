@@ -252,6 +252,60 @@ def merge(
 
 
 # --------------------------------------------------------------------------- #
+# apply
+# --------------------------------------------------------------------------- #
+@app.command()
+def apply(
+    ctx: typer.Context,
+    dest: Optional[Path] = typer.Option(None, "--dest", help="Output root."),
+    mode: Optional[str] = typer.Option(None, "--mode", help="symlink | copy."),
+    min_photos: int = typer.Option(
+        1, "--min-photos", help="Only emit people in >= N photos (named always emitted)."
+    ),
+    no_prune: bool = typer.Option(
+        False, "--no-prune", help="Keep stale links instead of removing them."
+    ),
+    dry_run: bool = typer.Option(
+        False, "--dry-run", help="Show planned actions without changing anything."
+    ),
+) -> None:
+    """Build the by-person/ tree of symlinks (or copies). Non-destructive."""
+    from faceorg.storage import apply as run_apply
+
+    config = _build_config(ctx, dest=dest, mode=mode)
+    if config.dest is None:
+        raise typer.BadParameter("No dest path. Pass --dest or set it in config.")
+
+    with _open_db(config) as db:
+        stats = run_apply(
+            db,
+            config.dest,
+            mode=config.mode,
+            min_photos=min_photos,
+            prune=not no_prune,
+            dry_run=dry_run,
+            src_root=config.src,
+        )
+
+    tree = config.dest / "by-person"
+    if dry_run:
+        typer.echo(f"[dry-run] {tree}")
+        for action in stats.planned:
+            typer.echo(f"  {action}")
+        typer.echo(
+            f"\n[dry-run] would: create {stats.created}, replace {stats.replaced}, "
+            f"prune {stats.pruned}, skip {stats.skipped} "
+            f"across {stats.people} people."
+        )
+    else:
+        typer.echo(
+            f"Applied to {tree}\n"
+            f"{stats.people} people: created {stats.created}, replaced {stats.replaced}, "
+            f"pruned {stats.pruned}, unchanged {stats.skipped}."
+        )
+
+
+# --------------------------------------------------------------------------- #
 # ignore / unignore
 # --------------------------------------------------------------------------- #
 @app.command()
